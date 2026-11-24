@@ -1,0 +1,8 @@
+﻿#include <windows.h>
+
+/* 程序图标：I.ico 放在本 rc 同目录，编译时 windres 以该目录为工作目录 */
+1 ICON "I.ico"
+
+/* 每显示器 DPI 感知（V2）：避免 125%/150% 缩放下字体发虚、布局挤压。
+   资源 ID 彼此独立命名空间，但仍避开与图标相同的 ID 以防混淆。 */
+2 RT_MANIFEST "app.manifest"

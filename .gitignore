@@ -1,0 +1,12 @@
+# windres 生成，编译时自动重建
+app.res.o
+*.o
+
+# 编译产物（如需随仓库发布，删掉下面两行）
+/build_test.exe
+/icons/*.ico
+
+# 编辑器/系统
+*.swp
+Thumbs.db
+desktop.ini

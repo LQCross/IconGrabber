@@ -1,0 +1,65 @@
+﻿图标获取器 IconGrabber 使用说明
+================================
+
+功能
+  把 exe 拖到 IconGrabber.exe 图标上 -> 提取该 exe 的「完整主图标组」（含所有分辨率/位深）
+  -> 保存为 .ico 到 config.ini 指定的目录。支持一次拖多个 exe。
+  提取的是完整图标组：一个 .ico 内含 16/24/32/48/256 等多种尺寸，不是单张图。
+
+程序和菜单图标
+  程序图标 & 右键菜单图标都用 I.ico（多尺寸 16~256）。
+
+三种用法
+  1) 拖拽：exe 拖到 IconGrabber.exe 上。
+  2) 右键菜单（安装后）：exe 上右键 -> 「提取主图标 (&I)」，I 为加速键。
+  3) 命令行：IconGrabber.exe [-grab] <exe路径> [exe路径...]
+
+命令行参数
+  -i / /i / i   打开「右键菜单管理」窗口（三个写法等价）。
+                窗口显示当前安装状态，有「安装右键菜单」「卸载右键菜单」「关闭」三个按钮，
+                装/卸结果就地刷新显示。安装即写入 HKCR\exefile\shell\IconGrabber：
+                菜单项「提取主图标 (&I)」、Icon 指向同目录 I.ico，
+                command 为本程序 + -grab "%1"。写 HKCR 可能需要管理员权限。
+  无参数        同样打开「右键菜单管理」窗口。
+  -grab <exe>   内部开关，右键菜单调用时使用，普通用户不用管。
+  带 exe 路径   直接提取，等同拖拽。
+
+反馈 / 进度
+  - 弹窗（安装/卸载/可选完成）都是自绘窗口：I.ico 图标 + 扁平「确定」按钮
+    （BS_FLAT），文字区背景与窗口一致，屏幕居中，ENTER/ESC 或点按钮关闭。
+  - 右键菜单管理窗口：状态标签 + 安装/卸载/关闭三个扁平按钮，装完就地刷新状态。
+  - 提取时：紧凑的进度窗口（带边框、带 I.ico 图标、屏幕居中），
+    显示 [当前/总数] 文件名和进度条，进度条左右对称居中。
+  - 进度条完成后按 config.ini 的 ProgressHoldMs 停留（默认 1000ms），
+    期间窗口仍可交互；完成后不再弹结果窗口（可用 ShowFinishDialog=1 开启）。
+
+文件
+  IconGrabber.exe   主程序（已内嵌 I.ico 作程序图标）
+  I.ico             程序/菜单图标
+  config.ini        配置
+  icon_grabber.c    源码
+  app.rc            资源脚本（把 I.ico、app.manifest 编进 exe）
+  app.manifest      DPI 感知与 Common-Controls v6 清单
+  icons\            默认输出目录（首次运行自动建）
+
+配置 (config.ini)
+  [Settings]
+  OutputDir=icons     输出目录。相对路径以本 exe 所在目录为基准；绝对路径直接写。
+  Overwrite=1         1=同名覆盖，0=跳过已存在的图标。
+  ProgressHoldMs=1000 进度条完成后保留毫秒数，默认 1000。
+  ShowFinishDialog=0  完成后是否弹结果窗口：0=不弹（默认），1=弹出。
+
+命名规则
+  图标文件名取 exe 的「产品名」(版本资源 ProductName)；没有则取 exe 文件名（去扩展名）。
+  文件名里的非法字符 \ / : * ? " < > | 会被替换成下划线。
+
+实现说明
+  - LoadLibraryEx(LOAD_LIBRARY_AS_DATAFILE) 只读加载 exe 资源，不执行目标代码。
+  - 枚举 RT_GROUP_ICON 取主图标组；组项 GRPICONENTRY 为 14 字节（1 字节打包），
+    nID 指向 RT_ICON 资源；把组内所有图像按 ICO 格式写出，保留各自原始尺寸/位深。
+  - 兼容传统 DIB 图标和 PNG 压缩图标。
+  - GUI 子系统无黑框；诊断信息仍写到控制台（如有附加控制台）。
+
+重新编译
+  windres -i app.rc -o app.res.o -O coff
+  gcc -municode -mwindows -O2 -Wall -Wextra -o IconGrabber.exe icon_grabber.c app.res.o -lshlwapi -lversion -ladvapi32 -lcomctl32
